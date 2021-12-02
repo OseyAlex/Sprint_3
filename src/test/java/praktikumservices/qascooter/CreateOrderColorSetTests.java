@@ -1,13 +1,19 @@
 package praktikumservices.qascooter;
 
+import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
+import io.restassured.response.ValidatableResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import praktikumservices.qascooter.entities.Order;
+import praktikumservices.qascooter.entities.TrackOrder;
+import praktikumservices.qascooter.methods.MethodsToCreateCancelGetTrackGetOrdersAcceptOrder;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -36,12 +42,19 @@ public class CreateOrderColorSetTests {
     }
 
     @Test
-    public void createOrder() {
-        OrderMethods orderMethods = new OrderMethods();
-        Order order = Order.getOrderdata(colorVariable);
-        int orderTrack = orderMethods.sendPostRequestNewOrder(order);
-        assertThat("номер заказа присвоился", orderTrack, notNullValue());
+    @DisplayName("Создание заказов с различными цветами")
+    public void createOrdersWithColorSet() {
+        MethodsToCreateCancelGetTrackGetOrdersAcceptOrder methodsToCreateCancelGetTrackGetOrdersAcceptOrder =
+                new MethodsToCreateCancelGetTrackGetOrdersAcceptOrder();
+        Order order = Order.getOrder(colorVariable);
+        ValidatableResponse responseOrderCreate = methodsToCreateCancelGetTrackGetOrdersAcceptOrder.
+                sendPostRequestNewOrder(order);
+        assertThat(responseOrderCreate.extract().statusCode(), equalTo(201));
+        int orderTrack = responseOrderCreate.extract().path("track");
+        assertThat("номер заказа не присвоился", orderTrack, notNullValue());
         //отменяем заказ
-        orderMethods.cancelOrder(new TrackOrder(orderTrack));
+        ValidatableResponse responseCancelOrder = methodsToCreateCancelGetTrackGetOrdersAcceptOrder.
+                cancelOrder(new TrackOrder().setTrackOrder(orderTrack));
+        assertThat("Заказ не отменяется", responseCancelOrder.extract().statusCode(), equalTo(200));
     }
 }

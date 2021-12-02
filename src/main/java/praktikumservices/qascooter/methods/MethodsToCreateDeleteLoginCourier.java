@@ -1,12 +1,15 @@
-package praktikumservices.qascooter;
+package praktikumservices.qascooter.methods;
 
 import io.qameta.allure.Step;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
+import praktikumservices.qascooter.EndPoints;
+import praktikumservices.qascooter.entities.Courier;
+import praktikumservices.qascooter.entities.CourierCredentials;
 
 import static io.restassured.RestAssured.given;
 
-public class CourierMethods {
+public class MethodsToCreateDeleteLoginCourier {
 
     @Step("Удаляем созданного курьера")
     public boolean deleteCourierById(int courierId) {

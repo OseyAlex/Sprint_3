@@ -1,5 +1,6 @@
 package praktikumservices.qascooter;
 
+import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
@@ -8,6 +9,9 @@ import io.restassured.response.ValidatableResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import praktikumservices.qascooter.entities.Courier;
+import praktikumservices.qascooter.entities.CourierCredentials;
+import praktikumservices.qascooter.methods.MethodsToCreateDeleteLoginCourier;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,46 +19,29 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class CreateCourierTests {
-    private CourierMethods courierMethods;
+    private MethodsToCreateDeleteLoginCourier methodsToCreateDeleteLoginCourier;
     private int courierId;
 
     @Before
     public void setUp() {
         RestAssured.baseURI = EndPoints.baseURI;
-        courierMethods = new CourierMethods();
+        methodsToCreateDeleteLoginCourier = new MethodsToCreateDeleteLoginCourier();
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @After
+    @Step("Удалить курьера")
     public void tearDown() {
         if (courierId != 0)
-            courierMethods.deleteCourierById(courierId);
+            methodsToCreateDeleteLoginCourier.deleteCourierById(courierId);
     }
 
     @Test
     @DisplayName("Создаём 1 курьера")
     public void createOneCourier() {
-        Courier courier = Courier.getRandomData();
+        Courier courier = Courier.getWithLoginPasswordAndFirstName();
 
-        ValidatableResponse responseCreate = courierMethods.create(courier);
-
-        int statusCode = responseCreate.extract().statusCode();
-        boolean isCourierCreated = responseCreate.extract().path("ok");
-
-        assertThat(statusCode, equalTo(201));
-        assertTrue(isCourierCreated);
-
-        //узнаём Id, чтобы удалить
-        ValidatableResponse responseLogin = courierMethods.loginCourier(new CourierCredentials(courier.login, courier.password));
-        courierId = responseLogin.extract().path("id");
-    }
-
-    @Test
-    @DisplayName("Создаём 1 курьера c минимальным кол-вом обяз. полей")
-    public void createOneCourierWithRequiredFieldsTest() {
-        Courier courierRequiredData = Courier.getRandomRequiredData();
-
-        ValidatableResponse response = courierMethods.create(courierRequiredData);
+        ValidatableResponse response = new MethodsToCreateDeleteLoginCourier().create(courier);
 
         int statusCode = response.extract().statusCode();
         boolean isCourierCreated = response.extract().path("ok");
@@ -62,16 +49,36 @@ public class CreateCourierTests {
         assertThat(statusCode, equalTo(201));
         assertTrue(isCourierCreated);
 
-        ValidatableResponse responseLogin = courierMethods.loginCourier(new CourierCredentials(courierRequiredData.login, courierRequiredData.password));
+        //узнаём Id, чтобы удалить
+        ValidatableResponse responseLogin = methodsToCreateDeleteLoginCourier.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
+        courierId = responseLogin.extract().path("id");
+    }
+
+    @Test
+    @DisplayName("Создаём 1 курьера c минимальным кол-вом обяз. полей")
+    public void createOneCourierWithRequiredFieldsTest() {
+        Courier courier = Courier.getWithLoginAndPassword();
+
+        ValidatableResponse response = new MethodsToCreateDeleteLoginCourier().create(courier);
+
+        int statusCode = response.extract().statusCode();
+        boolean isCourierCreated = response.extract().path("ok");
+
+        assertThat(statusCode, equalTo(201));
+        assertTrue(isCourierCreated);
+
+        //узнаём Id, чтобы удалить
+        ValidatableResponse responseLogin = methodsToCreateDeleteLoginCourier.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
         courierId = responseLogin.extract().path("id");
     }
 
     @Test
     @DisplayName("Создаём 1 курьера c логином, проверяем что будет ошибка")
     public void createOneCourierWithNotEnoughFieldsTest() {
-        Courier courierOnlyLoginData = Courier.getRandomLogin();
+        Courier courier = Courier.getWithLoginOnly();
 
-        ValidatableResponse response = courierMethods.create(courierOnlyLoginData);
+        ValidatableResponse response = new MethodsToCreateDeleteLoginCourier().create(courier);
+
         int statusCode = response.extract().statusCode();
         String actualMessage = response.extract().path("message");
 
@@ -83,10 +90,10 @@ public class CreateCourierTests {
     @Test
     @DisplayName("Создаём 2 курьера c одинаковыми данными")
     public void createTwoCourierTest() {
-        Courier courierNegative = Courier.getRandomData();
+        Courier courier = Courier.getWithLoginPasswordAndFirstName();
 
-        courierMethods.create(courierNegative);
-        ValidatableResponse responseNegative = courierMethods.create(courierNegative);
+        new MethodsToCreateDeleteLoginCourier().create(courier);
+        ValidatableResponse responseNegative = methodsToCreateDeleteLoginCourier.create(courier);
 
         int statusCode = responseNegative.extract().statusCode();
         String actualErrorMessage = responseNegative.extract().path("message");
@@ -95,7 +102,8 @@ public class CreateCourierTests {
         assertThat(statusCode, equalTo(409));
         assertEquals("Сообщение отличается", expectedErrorMessage, actualErrorMessage);
 
-        ValidatableResponse responseLogin = courierMethods.loginCourier(new CourierCredentials(courierNegative.login, courierNegative.password));
+        //узнаём Id, чтобы удалить
+        ValidatableResponse responseLogin = methodsToCreateDeleteLoginCourier.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
         courierId = responseLogin.extract().path("id");
     }
 }

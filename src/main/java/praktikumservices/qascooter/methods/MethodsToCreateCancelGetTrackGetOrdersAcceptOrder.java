@@ -1,73 +1,62 @@
-package praktikumservices.qascooter;
+package praktikumservices.qascooter.methods;
 
 import io.qameta.allure.Step;
 import io.restassured.http.ContentType;
+import io.restassured.response.ValidatableResponse;
+import praktikumservices.qascooter.EndPoints;
+import praktikumservices.qascooter.entities.TrackOrder;
+import praktikumservices.qascooter.entities.Order;
 
 import static io.restassured.RestAssured.given;
 
-public class OrderMethods {
+public class MethodsToCreateCancelGetTrackGetOrdersAcceptOrder {
 
     @Step("Создать заказ")
-    public int sendPostRequestNewOrder(Order order) {
+    public ValidatableResponse sendPostRequestNewOrder(Order order) {
         return given()
                 .contentType(ContentType.JSON)
                 .and()
                 .body(order)
                 .when()
                 .post(EndPoints.createOrder)
-                .then()
-                .assertThat()
-                .statusCode(201)
-                .extract().path("track");
+                .then();
     }
 
     @Step("Отменить заказ")
-    public boolean cancelOrder(TrackOrder orderTrack) {
+    public ValidatableResponse cancelOrder(TrackOrder orderTrack) {
         return given()
                 .contentType(ContentType.JSON)
                 .and()
                 .body(orderTrack)
                 .when()
                 .put(EndPoints.cancelOrder)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .extract().path("ok");
+                .then();
     }
 
     @Step("Принять заказ")
-    public boolean acceptOrder(int courierId, int trackOrder) {
+    public ValidatableResponse acceptOrder(int courierId, int trackOrder) {
         return given()
                 .when()
                 .queryParam("courierId", courierId)
                 .put(EndPoints.acceptOrder + trackOrder)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .extract().path("ok");
+                .then();
     }
 
     @Step("Получить список заказов")
-    public int getOrder(int courierId) {
+    public ValidatableResponse getOrder(int courierId) {
         return given()
                 .when()
                 .queryParam("courierId", courierId)
                 .get(EndPoints.getOrders)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .extract().body().path("pageInfo.total");
+                .then();
     }
 
     @Step("Получить заказ по номеру")
-    public int getOrderByTrackId(int firstOrderTrack) {
+    public ValidatableResponse getOrderByTrackId(int firstOrderTrack) {
         return given()
                 .when()
                 .queryParam("t", firstOrderTrack)
                 .get(EndPoints.getOrdersByTrackId)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .extract().body().path("order.id");
+                .then();
     }
 }
