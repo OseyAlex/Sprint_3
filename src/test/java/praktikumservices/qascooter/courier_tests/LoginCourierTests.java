@@ -1,4 +1,4 @@
-package praktikumservices.qascooter;
+package praktikumservices.qascooter.courier_tests;
 
 import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
@@ -9,9 +9,10 @@ import io.restassured.response.ValidatableResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import praktikumservices.qascooter.EndPoints;
 import praktikumservices.qascooter.entities.Courier;
 import praktikumservices.qascooter.entities.CourierCredentials;
-import praktikumservices.qascooter.methods.MethodsToCreateDeleteLoginCourier;
+import praktikumservices.qascooter.helpers.CourierHelper;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -19,13 +20,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
 public class LoginCourierTests {
-    private MethodsToCreateDeleteLoginCourier methodsToCreateDeleteLoginCourier;
+    private CourierHelper courierHelper;
     private int courierId;
 
     @Before
     public void setUp() {
         RestAssured.baseURI = EndPoints.baseURI;
-        methodsToCreateDeleteLoginCourier = new MethodsToCreateDeleteLoginCourier();
+        courierHelper = new CourierHelper();
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
@@ -33,7 +34,7 @@ public class LoginCourierTests {
     @Step("Удалить курьера")
     public void tearDown() {
         if (courierId != 0)
-            methodsToCreateDeleteLoginCourier.deleteCourierById(courierId);
+            courierHelper.deleteCourierById(courierId);
     }
 
     @Test
@@ -41,9 +42,9 @@ public class LoginCourierTests {
     public void loginOneCourier() {
         Courier courier = Courier.getWithLoginPasswordAndFirstName();
         //создаем курьера
-        methodsToCreateDeleteLoginCourier.create(courier);
+        courierHelper.create(courier);
         //логиним
-        ValidatableResponse responseLogin = methodsToCreateDeleteLoginCourier.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
+        ValidatableResponse responseLogin = courierHelper.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
         int statusCode = responseLogin.extract().statusCode();
         courierId = responseLogin.extract().path("id");
 
@@ -57,8 +58,8 @@ public class LoginCourierTests {
         Courier courier = Courier.getWithLoginPasswordAndFirstName();
         String wrongPassword = "WrOnG_pAsSwOrD";
 
-        methodsToCreateDeleteLoginCourier.create(courier);
-        ValidatableResponse responseLoginFalse = methodsToCreateDeleteLoginCourier.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), wrongPassword));
+        courierHelper.create(courier);
+        ValidatableResponse responseLoginFalse = courierHelper.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), wrongPassword));
         int statusCode = responseLoginFalse.extract().statusCode();
         String actualErrorMessage = responseLoginFalse.extract().path("message");
         String expectedErrorMessage = "Учетная запись не найдена";
@@ -67,7 +68,7 @@ public class LoginCourierTests {
         assertEquals("Сообщение отличается", expectedErrorMessage, actualErrorMessage);
 
         //узнаем Id курьера, чтобы удалить
-        ValidatableResponse responseLogin = methodsToCreateDeleteLoginCourier.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
+        ValidatableResponse responseLogin = courierHelper.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
         courierId = responseLogin.extract().path("id");
     }
 
@@ -76,7 +77,7 @@ public class LoginCourierTests {
     public void loginCourierWithWrongLoginTest() {
         Courier courier = Courier.getWithLoginPasswordAndFirstName();
 
-        ValidatableResponse responseLoginError = methodsToCreateDeleteLoginCourier.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
+        ValidatableResponse responseLoginError = courierHelper.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
         int statusCode = responseLoginError.extract().statusCode();
         String actualErrorMessage = responseLoginError.extract().path("message");
         String expectedErrorMessage = "Учетная запись не найдена";
@@ -90,8 +91,8 @@ public class LoginCourierTests {
     public void loginCourierWithOnlyLoginTest() {
         Courier courier = Courier.getWithLoginPasswordAndFirstName();
 
-        methodsToCreateDeleteLoginCourier.create(courier);
-        ValidatableResponse responseLoginFail = methodsToCreateDeleteLoginCourier.loginCourier(new CourierCredentials().setCourierLoginCredential(courier.getLogin()));
+        courierHelper.create(courier);
+        ValidatableResponse responseLoginFail = courierHelper.loginCourier(new CourierCredentials().setCourierLoginCredential(courier.getLogin()));
         int statusCode = responseLoginFail.extract().statusCode();
 
         assertThat(statusCode, equalTo(400));
@@ -101,7 +102,7 @@ public class LoginCourierTests {
 
         assertEquals("Сообщение отличается", expectedErrorMessage, actualErrorMessage);
 
-        ValidatableResponse responseLogin = methodsToCreateDeleteLoginCourier.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
+        ValidatableResponse responseLogin = courierHelper.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
         courierId = responseLogin.extract().path("id");
     }
 }

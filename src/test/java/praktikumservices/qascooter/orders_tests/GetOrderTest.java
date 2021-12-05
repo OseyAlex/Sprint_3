@@ -1,4 +1,4 @@
-package praktikumservices.qascooter;
+package praktikumservices.qascooter.orders_tests;
 
 import io.qameta.allure.Description;
 import io.qameta.allure.Step;
@@ -10,11 +10,12 @@ import io.restassured.response.ValidatableResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import praktikumservices.qascooter.EndPoints;
 import praktikumservices.qascooter.entities.Courier;
 import praktikumservices.qascooter.entities.CourierCredentials;
 import praktikumservices.qascooter.entities.Order;
-import praktikumservices.qascooter.methods.MethodsToCreateDeleteLoginCourier;
-import praktikumservices.qascooter.methods.MethodsToCreateCancelGetTrackGetOrdersAcceptOrder;
+import praktikumservices.qascooter.helpers.CourierHelper;
+import praktikumservices.qascooter.helpers.OrderHelper;
 
 import java.util.List;
 
@@ -24,8 +25,8 @@ import static org.junit.Assert.assertFalse;
 
 public class GetOrderTest {
 
-    private MethodsToCreateDeleteLoginCourier methodsToCreateDeleteLoginCourier;
-    private MethodsToCreateCancelGetTrackGetOrdersAcceptOrder methodsToCreateCancelGetTrackGetOrdersAcceptOrder;
+    private CourierHelper courierHelper;
+    private OrderHelper orderHelper;
     private int courierId;
     private int orderId;
     private int orderTrack;
@@ -34,8 +35,8 @@ public class GetOrderTest {
     @Before
     public void setUp() {
         RestAssured.baseURI = EndPoints.baseURI;
-        methodsToCreateDeleteLoginCourier = new MethodsToCreateDeleteLoginCourier();
-        methodsToCreateCancelGetTrackGetOrdersAcceptOrder = new MethodsToCreateCancelGetTrackGetOrdersAcceptOrder();
+        courierHelper = new CourierHelper();
+        orderHelper = new OrderHelper();
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
@@ -43,7 +44,7 @@ public class GetOrderTest {
     @Step("Удалить курьера")
     public void tearDown() {
         if (courierId != 0)
-            methodsToCreateDeleteLoginCourier.deleteCourierById(courierId);
+            courierHelper.deleteCourierById(courierId);
     }
 
     @Test
@@ -59,28 +60,28 @@ public class GetOrderTest {
         Courier courier = Courier.getWithLoginPasswordAndFirstName();
 
         //создаём курьера
-        methodsToCreateDeleteLoginCourier.create(courier);
+        courierHelper.create(courier);
 
         //получаем ID
-        ValidatableResponse responseLogin = methodsToCreateDeleteLoginCourier.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
+        ValidatableResponse responseLogin = courierHelper.loginCourier(new CourierCredentials().setCourierCredentials(courier.getLogin(), courier.getPassword()));
         courierId = responseLogin.extract().path("id");
         //создаём заказ
         Order firstOrder = Order.getOrder(color);
-        ValidatableResponse responseOrderCreate = methodsToCreateCancelGetTrackGetOrdersAcceptOrder.sendPostRequestNewOrder(firstOrder);
+        ValidatableResponse responseOrderCreate = orderHelper.sendPostRequestNewOrder(firstOrder);
         assertThat(responseOrderCreate.extract().statusCode(), equalTo(201));
         orderTrack = responseOrderCreate.extract().path("track");
 
         //узнаём id заказа
-        ValidatableResponse responseOrderByTrackId = methodsToCreateCancelGetTrackGetOrdersAcceptOrder.getOrderByTrackId(orderTrack);
+        ValidatableResponse responseOrderByTrackId = orderHelper.getOrderByTrackId(orderTrack);
         assertThat(responseOrderByTrackId.extract().statusCode(), equalTo(200));
         orderId = responseOrderByTrackId.extract().body().path("order.id");
 
         //принимаем заказ для текущего курьера, передавая id Заказа!!!!, не трек номер!!!!
-        ValidatableResponse responseAcceptOrder = methodsToCreateCancelGetTrackGetOrdersAcceptOrder.acceptOrder(courierId, orderId);
+        ValidatableResponse responseAcceptOrder = orderHelper.acceptOrder(courierId, orderId);
         assertThat(responseAcceptOrder.extract().statusCode(), equalTo(200));
 
         //получаем список заказов для тек. курьера
-        ValidatableResponse responseGetOrder = methodsToCreateCancelGetTrackGetOrdersAcceptOrder.getOrder(courierId);
+        ValidatableResponse responseGetOrder = orderHelper.getOrder(courierId);
         assertThat(responseGetOrder.extract().statusCode(), equalTo(200));
         List<Object> orders = responseGetOrder.extract().jsonPath().getList("orders");
         assertFalse(orders.isEmpty());

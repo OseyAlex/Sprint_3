@@ -1,4 +1,4 @@
-package praktikumservices.qascooter;
+package praktikumservices.qascooter.orders_tests;
 
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
@@ -9,9 +9,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import praktikumservices.qascooter.EndPoints;
 import praktikumservices.qascooter.entities.Order;
 import praktikumservices.qascooter.entities.TrackOrder;
-import praktikumservices.qascooter.methods.MethodsToCreateCancelGetTrackGetOrdersAcceptOrder;
+import praktikumservices.qascooter.helpers.OrderHelper;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -44,16 +45,16 @@ public class CreateOrderColorSetTests {
     @Test
     @DisplayName("Создание заказов с различными цветами")
     public void createOrdersWithColorSet() {
-        MethodsToCreateCancelGetTrackGetOrdersAcceptOrder methodsToCreateCancelGetTrackGetOrdersAcceptOrder =
-                new MethodsToCreateCancelGetTrackGetOrdersAcceptOrder();
+        OrderHelper orderHelper =
+                new OrderHelper();
         Order order = Order.getOrder(colorVariable);
-        ValidatableResponse responseOrderCreate = methodsToCreateCancelGetTrackGetOrdersAcceptOrder.
+        ValidatableResponse responseOrderCreate = orderHelper.
                 sendPostRequestNewOrder(order);
         assertThat(responseOrderCreate.extract().statusCode(), equalTo(201));
         int orderTrack = responseOrderCreate.extract().path("track");
         assertThat("номер заказа не присвоился", orderTrack, notNullValue());
         //отменяем заказ
-        ValidatableResponse responseCancelOrder = methodsToCreateCancelGetTrackGetOrdersAcceptOrder.
+        ValidatableResponse responseCancelOrder = orderHelper.
                 cancelOrder(new TrackOrder().setTrackOrder(orderTrack));
         assertThat("Заказ не отменяется", responseCancelOrder.extract().statusCode(), equalTo(200));
     }
